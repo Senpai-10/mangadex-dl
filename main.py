@@ -128,8 +128,9 @@ class Chapter:
     title: str
 
 
-def fetch_chapters(manga_id) -> list[Chapter]:
-    print("Fetching chapters")
+def fetch_chapters(
+    manga_id, download_list_volumes: list[str], download_list_chapters: list[str]
+) -> list[Chapter]:
     offset: int = 0
     limit: int = 96
     chapters = []
@@ -158,9 +159,14 @@ def fetch_chapters(manga_id) -> list[Chapter]:
 
             volume = attr["volume"]
             num = attr["chapter"]
-            title = attr["title"]
+            title = attr["title"] or "untitled"
 
             if attr["externalUrl"]:
+                continue
+
+            if not "*" in download_list_volumes and not volume in download_list_volumes:
+                continue
+            if not "*" in download_list_chapters and not num in download_list_chapters:
                 continue
 
             new_chapter = Chapter(id, volume, num, title)
@@ -174,14 +180,17 @@ def fetch_chapters(manga_id) -> list[Chapter]:
 
 
 class Manga:
-    def __init__(self, id: str):
+    def __init__(
+        self,
+        id: str,
+        download_list_volumes: list[str],
+        download_list_chapters: list[str],
+    ):
         self.id = id
         self.info: MangaInfo = MangaInfo(id).fetch()
-        self.chapters: list[Chapter] = fetch_chapters(id)
-
-
-def main(manga_id: str):
-    manga = Manga(manga_id)
+        self.chapters: list[Chapter] = fetch_chapters(
+            id, download_list_volumes, download_list_chapters
+        )
 
 
 def dir_path(s):
@@ -189,6 +198,54 @@ def dir_path(s):
         return s
     else:
         os.makedirs(s)
+
+
+def expand_range(s: str) -> list[str]:
+    l = []
+    start, end = s.split("-")
+
+    if not start.isdigit() or not end.isdigit():
+        return []
+
+    for i in range(int(start), int(end) + 1):
+        l.append(str(i))
+
+    return l
+
+
+def parse_download_limit(s: str):
+    # NOTE: Needs refactoring
+    l = []
+    list_of_nums: list[str] | None = None
+
+    if "," in s:
+        list_of_nums = s.split(",")
+    elif not "," in s and " " in s:
+        list_of_nums = s.split(" ")
+
+    if list_of_nums:
+        for n in list_of_nums:
+            n = n.strip()
+
+            if not n:
+                continue
+
+            if "-" in n:
+                for r in expand_range(n):
+                    l.append(r)
+            else:
+                l.append(n)
+    else:
+        if "-" in s:
+            for r in expand_range(s):
+                l.append(r)
+        else:
+            return [s]
+
+    if not s or len(l) == 0:
+        return ["*"]
+
+    return l
 
 
 if __name__ == "__main__":
@@ -206,8 +263,27 @@ if __name__ == "__main__":
         help="Output directory for downloaded manga",
     )
 
+    parser.add_argument(
+        "-v",
+        "--volumes",
+        type=str,
+        default="*",
+        help="Volumes to donwload, can be a range or a '*' to download all volumes (Default: '*') Example: \"--volumes '1,2,3,4,5-10'\" or \"--volumes '1-10'\" or \"--volumes '*'\"",
+    )
+
+    parser.add_argument(
+        "-c",
+        "--chapters",
+        type=str,
+        default="*",
+        help="Chapters to donwload, can be a range or a '*' to download all chapters (Default: '*') Example: \"--chapters '1,2,3,4,5-10'\" or \"--chapters '1-10'\" or \"--chapters '*'\"",
+    )
+
     args = parser.parse_args()
 
-    print(args)
+    download_list_volumes = parse_download_limit(args.volumes)
+    download_list_chapters = parse_download_limit(args.chapters)
 
-    main(args.id)
+    manga = Manga(args.id, download_list_volumes, download_list_chapters)
+
+    print(manga.chapters)
