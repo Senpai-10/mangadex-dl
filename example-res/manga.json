@@ -208,7 +208,16 @@
             },
             {
                 "id": "3db4e01f-067d-4f96-8a80-dd28b8b0d251",
-                "type": "cover_art"
+                "type": "cover_art",
+                "attributes": {
+                    "description": "",
+                    "volume": null,
+                    "fileName": "255efcd8-bb1c-4990-8d70-d74111efdf41.jpg",
+                    "locale": "ja",
+                    "createdAt": "2021-05-24T16:50:09+00:00",
+                    "updatedAt": "2021-05-24T16:50:09+00:00",
+                    "version": 1
+                }
             },
             {
                 "id": "239d6260-d71f-43b0-afff-074e3619e3de",
