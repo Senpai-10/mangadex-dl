@@ -140,7 +140,7 @@ def fetch_chapters(
     manga_id, download_list_volumes: list[str], download_list_chapters: list[str]
 ) -> list[Chapter]:
     offset: int = 0
-    limit: int = 96
+    limit: int = 500
     chapters = []
 
     while True:
