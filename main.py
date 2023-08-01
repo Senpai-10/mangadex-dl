@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from slugify import slugify
 
 
-def parse_filename(f) -> tuple[str, str]:
+def parse_filename(f) -> str:
     num = ""
     parts = f.split("-")
     page_number = parts[0]
@@ -18,7 +18,7 @@ def parse_filename(f) -> tuple[str, str]:
 
         num += char
 
-    return (num, f"{num}.{file_ext}")
+    return f"{num}.{file_ext}"
 
 
 @dataclass
@@ -91,36 +91,6 @@ class MangaInfo:
                 self.cover_art_file_ext = file_name.split(".")[1] or "png"
 
         return self
-
-
-@dataclass
-class Page:
-    num: int = field(default_factory=int)
-    url: str = field(default_factory=str)
-    file_name: str = field(default_factory=str)
-
-
-def fetch_pages(chapter_id: str) -> list[Page]:
-    url = f"https://api.mangadex.org/at-home/server/{chapter_id}?forcePort443=false"
-
-    res = requests.get(url)
-
-    res_json = res.json()
-
-    pages = []
-
-    chapter = res_json["chapter"]
-    hash = chapter["hash"]
-    data = chapter["data"]
-
-    for filename in data:
-        page_url = f"https://uploads.mangadex.org/data/{hash}/{filename}"
-        parsed_filename = parse_filename(filename)
-        new_page = Page(int(parsed_filename[0]), page_url, parsed_filename[1])
-
-        pages.append(new_page)
-
-    return pages
 
 
 @dataclass
@@ -235,6 +205,26 @@ class Manga:
 
             if not os.path.exists(chapter_dir):
                 os.makedirs(chapter_dir)
+
+            url = f"https://api.mangadex.org/at-home/server/{chapter.id}?forcePort443=false"
+
+            res = requests.get(url)
+
+            res_json = res.json()
+
+            chapter = res_json["chapter"]
+            hash = chapter["hash"]
+            data = chapter["data"]
+
+            for filename in data:
+                page_url = f"https://uploads.mangadex.org/data/{hash}/{filename}"
+                page_filename = parse_filename(filename)
+
+                page_path = os.path.join(chapter_dir, page_filename)
+
+                if not os.path.exists(page_path):
+                    with open(page_path, "wb") as f:
+                        f.write(requests.get(page_url).content)
 
 
 def dir_path(s):
