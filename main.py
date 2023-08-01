@@ -112,7 +112,6 @@ class MangaInfo:
             "cover_art_file_ext": self.cover_art_file_ext,
         }
 
-
         with open(file_path, "w") as f:
             f.write(json.dumps(data, indent=4))
 
