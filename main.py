@@ -198,13 +198,13 @@ class Manga:
         )
 
     def download(self):
-        download_dir = os.path.join(self.output_dir, slugify(self.info.title))
+        manga_dir = os.path.join(self.output_dir, slugify(self.info.title))
 
-        if not os.path.exists(download_dir):
-            os.makedirs(download_dir)
+        if not os.path.exists(manga_dir):
+            os.makedirs(manga_dir)
 
         cover_art_path = os.path.join(
-            download_dir, f"cover.{self.info.cover_art_file_ext}"
+            manga_dir, f"cover.{self.info.cover_art_file_ext}"
         )
 
         # Download the cover_art
@@ -213,6 +213,28 @@ class Manga:
                 f.write(requests.get(self.info.cover_art).content)
 
         # TODO: dump self.info in a json file called "info.json"
+
+        volumes_dir = os.path.join(manga_dir, "volumes")
+
+        if not os.path.exists(volumes_dir):
+            os.makedirs(volumes_dir)
+
+        # Download chapters
+        for chapter in self.chapters:
+            volume_dir = os.path.join(volumes_dir, chapter.volume)
+
+            if not os.path.exists(volume_dir):
+                os.makedirs(volume_dir)
+
+            new_chapter_title = slugify(chapter.title).replace("-", " ")
+
+            chapter_dir = os.path.join(
+                volume_dir,
+                f"{chapter.number} {new_chapter_title}",
+            )
+
+            if not os.path.exists(chapter_dir):
+                os.makedirs(chapter_dir)
 
 
 def dir_path(s):
