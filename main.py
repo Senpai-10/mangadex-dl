@@ -106,9 +106,6 @@ class MangaInfo:
         return self
 
     def dump_into_file(self, dump_dir: str):
-        # TODO make info.json file
-        # TODO override info.json if found
-
         file_path = os.path.join(dump_dir, "info.json")
         data = {
             "id": self.id,
