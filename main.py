@@ -248,7 +248,7 @@ class Manga:
             res_json = res.json()
 
             progress_bar = Progress(
-                TextColumn(f"Chapter {chapter.number}"),
+                TextColumn(f"[bold green]Downloading[/bold green] ch [bold]{chapter.number}[/bold]"),
                 TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
                 BarColumn(),
                 MofNCompleteColumn(),
