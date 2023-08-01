@@ -1,6 +1,7 @@
 import requests
 import argparse
 import time
+import os
 from dataclasses import dataclass, field
 
 
@@ -183,6 +184,13 @@ def main(manga_id: str):
     manga = Manga(manga_id)
 
 
+def dir_path(s):
+    if os.path.isdir(s):
+        return s
+    else:
+        os.makedirs(s)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
@@ -190,6 +198,16 @@ if __name__ == "__main__":
         "-i", "--id", type=str, required=True, help="ID of manga you want to download."
     )
 
+    parser.add_argument(
+        "-o",
+        "--output-dir",
+        type=dir_path,
+        default=os.getcwd(),
+        help="Output directory for downloaded manga",
+    )
+
     args = parser.parse_args()
+
+    print(args)
 
     main(args.id)
