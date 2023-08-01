@@ -154,32 +154,44 @@ def fetch_chapters(
         if len(data) == 0:
             break
 
-        print("Fetching chapters")
+        progress_bar = Progress(
+            TextColumn(f"[bold cyan]Fetching chapters[/bold cyan]"),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            BarColumn(),
+            MofNCompleteColumn(),
+        )
 
-        for chapter in data:
-            id = chapter["id"]
-            ch_type = chapter["type"]
+        with progress_bar as p:
+            for chapter in p.track(data):
+                id = chapter["id"]
+                ch_type = chapter["type"]
 
-            if ch_type != "chapter":
-                continue
+                if ch_type != "chapter":
+                    continue
 
-            attr = chapter["attributes"]
+                attr = chapter["attributes"]
 
-            volume = attr["volume"]
-            num = attr["chapter"]
-            title = attr["title"] or "untitled"
+                volume = attr["volume"]
+                num = attr["chapter"]
+                title = attr["title"] or "untitled"
 
-            if attr["externalUrl"]:
-                continue
+                if attr["externalUrl"]:
+                    continue
 
-            if not "*" in download_list_volumes and not volume in download_list_volumes:
-                continue
-            if not "*" in download_list_chapters and not num in download_list_chapters:
-                continue
+                if (
+                    not "*" in download_list_volumes
+                    and not volume in download_list_volumes
+                ):
+                    continue
+                if (
+                    not "*" in download_list_chapters
+                    and not num in download_list_chapters
+                ):
+                    continue
 
-            new_chapter = Chapter(id, volume, num, title)
+                new_chapter = Chapter(id, volume, num, title)
 
-            chapters.append(new_chapter)
+                chapters.append(new_chapter)
 
         offset = offset + limit
         time.sleep(0.600)
@@ -248,7 +260,9 @@ class Manga:
             res_json = res.json()
 
             progress_bar = Progress(
-                TextColumn(f"[bold green]Downloading[/bold green] ch [bold]{chapter.number}[/bold]"),
+                TextColumn(
+                    f"[bold green]Downloading[/bold green] ch [bold]{chapter.number}[/bold]"
+                ),
                 TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
                 BarColumn(),
                 MofNCompleteColumn(),
