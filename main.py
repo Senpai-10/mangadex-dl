@@ -16,7 +16,7 @@ class MangaInfo:
     themes: list[str] = field(default_factory=list)
     cover_art: str = field(default_factory=str)
 
-    def parse(self):
+    def fetch(self):
         url = f"https://api.mangadex.org/manga/{self.id}?includes[]=cover_art"
         res = requests.get(url)
 
@@ -76,7 +76,7 @@ class MangaInfo:
 class Manga:
     def __init__(self, id: str):
         self.id = id
-        self.info = MangaInfo(id).parse()
+        self.info = MangaInfo(id).fetch()
 
 
 def main(manga_id: str):
