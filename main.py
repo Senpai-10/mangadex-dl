@@ -3,7 +3,11 @@ import argparse
 import time
 import os
 import json
+from rich.console import Console
+from rich.prompt import IntPrompt
+from rich.table import Table
 from dataclasses import dataclass, field
+from urllib.parse import quote
 from slugify import slugify
 
 
@@ -306,11 +310,82 @@ def parse_download_limit(s: str):
     return l
 
 
+def manga_search(n: str) -> str:
+    encoded_title = quote(n)
+    url = f"https://api.mangadex.org/manga?title={encoded_title}&limit=20&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&includes[]=cover_art&order[relevance]=desc"
+
+    res = requests.get(url)
+
+    res_json = res.json()
+
+    data = res_json["data"]
+
+    ids = []
+    manga_list: list[dict[str, str]] = []
+
+    for manga in data:
+        id = manga["id"]
+        attr = manga["attributes"]
+
+        title = attr["title"]["en"]
+        lastVolume = attr["lastVolume"]
+        lastChapter = attr["lastChapter"]
+        year = str(attr["year"])
+        state = attr["state"]
+
+        manga_dict = {
+            "title": title,
+            "lastVolume": lastVolume,
+            "lastChapter": lastChapter,
+            "year": year,
+            "state": state,
+        }
+
+        ids.append(id)
+        manga_list.append(manga_dict)
+
+    table = Table(title=f"Search for '{encoded_title}'")
+
+    table.add_column("#", justify="center", style="red")
+    table.add_column("Title", justify="left", style="cyan", no_wrap=True)
+    table.add_column("Total volume", justify="left", style="green")
+    table.add_column("Total chapter", justify="left", style="green")
+    table.add_column("Year", justify="left", style="green")
+    table.add_column("State", justify="left", style="green")
+
+    for index, row in enumerate(manga_list):
+        table.add_row(
+            str(index),
+            row["title"],
+            row["lastVolume"],
+            row["lastChapter"],
+            row["year"],
+            row["state"],
+        )
+
+    while True:
+        console = Console()
+        console.print(table)
+
+        index: int = IntPrompt.ask("Select manga", show_default=True, default=0)
+
+        if ids[index]:
+            return ids[index]
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "-i", "--id", type=str, required=True, help="ID of manga you want to download."
+        "-i", "--id", type=str, required=False, help="ID of manga you want to download."
+    )
+
+    parser.add_argument(
+        "-n",
+        "--name",
+        type=str,
+        required=False,
+        help="Name of manga you want to download.",
     )
 
     parser.add_argument(
@@ -342,8 +417,17 @@ if __name__ == "__main__":
     download_list_volumes = parse_download_limit(args.volumes)
     download_list_chapters = parse_download_limit(args.chapters)
 
+    if not args.id and not args.name:
+        print("Please provid '--id' or '--name', Use --help for more info.")
+        exit(1)
+
+    if not args.id and args.name:
+        args.id = manga_search(args.name)
+
     manga = Manga(
         args.id, download_list_volumes, download_list_chapters, args.output_dir
     )
 
     manga.download()
+
+
