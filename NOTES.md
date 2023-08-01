@@ -30,6 +30,7 @@ offset 0 is the first page
 
 if you want to get the next page
 add the limit to offset value
+
 ```python
 offset = offset + limit
 ```
