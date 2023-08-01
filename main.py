@@ -9,6 +9,14 @@ from rich.table import Table
 from dataclasses import dataclass, field
 from urllib.parse import quote
 from slugify import slugify
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    TextColumn,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
+)
 
 
 def parse_filename(f) -> str:
@@ -239,19 +247,31 @@ class Manga:
 
             res_json = res.json()
 
-            chapter = res_json["chapter"]
-            hash = chapter["hash"]
-            data = chapter["data"]
+            progress_bar = Progress(
+                TextColumn(f"Chapter {chapter.number}"),
+                TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+                BarColumn(),
+                MofNCompleteColumn(),
+                TextColumn("•"),
+                TimeElapsedColumn(),
+            )
 
-            for filename in data:
-                page_url = f"https://uploads.mangadex.org/data/{hash}/{filename}"
-                page_filename = parse_filename(filename)
+            ch = res_json["chapter"]
+            hash = ch["hash"]
+            data = ch["data"]
 
-                page_path = os.path.join(chapter_dir, page_filename)
+            with progress_bar as p:
+                for filename in p.track(
+                    data, description=f"Downloading chapter {chapter.number}"
+                ):
+                    page_url = f"https://uploads.mangadex.org/data/{hash}/{filename}"
+                    page_filename = parse_filename(filename)
 
-                if not os.path.exists(page_path):
-                    with open(page_path, "wb") as f:
-                        f.write(requests.get(page_url).content)
+                    page_path = os.path.join(chapter_dir, page_filename)
+
+                    if not os.path.exists(page_path):
+                        with open(page_path, "wb") as f:
+                            f.write(requests.get(page_url).content)
 
 
 def dir_path(s):
@@ -429,5 +449,3 @@ if __name__ == "__main__":
     )
 
     manga.download()
-
-
