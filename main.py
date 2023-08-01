@@ -2,6 +2,7 @@ import requests
 import argparse
 import time
 import os
+import json
 from dataclasses import dataclass, field
 from slugify import slugify
 
@@ -91,6 +92,29 @@ class MangaInfo:
                 self.cover_art_file_ext = file_name.split(".")[1] or "png"
 
         return self
+
+    def dump_into_file(self, dump_dir: str):
+        # TODO make info.json file
+        # TODO override info.json if found
+
+        file_path = os.path.join(dump_dir, "info.json")
+        data = {
+            "id": self.id,
+            "title": self.title,
+            "altTitles": self.altTitles,
+            "description": self.description,
+            "lastVolume": self.lastVolume,
+            "lastChapter": self.lastChapter,
+            "status": self.status,
+            "genres": self.genres,
+            "themes": self.themes,
+            "cover_art": self.cover_art,
+            "cover_art_file_ext": self.cover_art_file_ext,
+        }
+
+
+        with open(file_path, "w") as f:
+            f.write(json.dumps(data, indent=4))
 
 
 @dataclass
@@ -182,7 +206,7 @@ class Manga:
             with open(cover_art_path, "wb") as f:
                 f.write(requests.get(self.info.cover_art).content)
 
-        # TODO: dump self.info in a json file called "info.json"
+        self.info.dump_into_file(manga_dir)
 
         volumes_dir = os.path.join(manga_dir, "volumes")
 
