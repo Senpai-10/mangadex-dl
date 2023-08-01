@@ -7,9 +7,18 @@ the manga id is: a460ab18-22c1-47eb-a08a-9ee85fe37ec8
 
 ## 2. Get info about the manga
 
-`https://api.mangadex.org/manga/{MANGA_ID}`
+`https://api.mangadex.org/manga/{MANGA_ID}?includes[]=cover_art`
 
-Example response for `https://api.mangadex.org/manga/a460ab18-22c1-47eb-a08a-9ee85fe37ec8`
+Example response for `https://api.mangadex.org/manga/a460ab18-22c1-47eb-a08a-9ee85fe37ec8?includes[]=cover_art`
+
+### 2.1 Get cover art
+
+in relationships type "cover_art" extract attributes.fileName
+
+if you want the cover art to be of size 256
+just append ".256.jpg" at the end of fileName
+
+the image url is `https://mangadex.org/covers/{MANGA_ID}/{FILE_NAME}`
 
 [Example response](./example-res/manga.json)
 
