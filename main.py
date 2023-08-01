@@ -3,6 +3,7 @@ import argparse
 import time
 import os
 from dataclasses import dataclass, field
+from slugify import slugify
 
 
 def parse_filename(f) -> tuple[str, str]:
@@ -32,6 +33,7 @@ class MangaInfo:
     genres: list[str] = field(default_factory=list)
     themes: list[str] = field(default_factory=list)
     cover_art: str = field(default_factory=str)
+    cover_art_file_ext: str = field(default_factory=str)
 
     def fetch(self):
         url = f"https://api.mangadex.org/manga/{self.id}?includes[]=cover_art"
@@ -86,6 +88,7 @@ class MangaInfo:
                     file_name += ".256.jpg"
 
                 self.cover_art = f"https://mangadex.org/covers/{self.id}/{file_name}"
+                self.cover_art_file_ext = file_name.split(".")[1] or "png"
 
         return self
 
@@ -185,19 +188,39 @@ class Manga:
         id: str,
         download_list_volumes: list[str],
         download_list_chapters: list[str],
+        output_dir: str,
     ):
         self.id = id
+        self.output_dir = output_dir
         self.info: MangaInfo = MangaInfo(id).fetch()
         self.chapters: list[Chapter] = fetch_chapters(
             id, download_list_volumes, download_list_chapters
         )
 
+    def download(self):
+        download_dir = os.path.join(self.output_dir, slugify(self.info.title))
+
+        if not os.path.exists(download_dir):
+            os.makedirs(download_dir)
+
+        cover_art_path = os.path.join(
+            download_dir, f"cover.{self.info.cover_art_file_ext}"
+        )
+
+        # Download the cover_art
+        if not os.path.exists(cover_art_path):
+            with open(cover_art_path, "wb") as f:
+                f.write(requests.get(self.info.cover_art).content)
+
+        # TODO: dump self.info in a json file called "info.json"
+
 
 def dir_path(s):
     if os.path.isdir(s):
-        return s
+        return os.path.normpath(s)
     else:
-        os.makedirs(s)
+        os.makedirs(os.path.normpath(s))
+        return os.path.normpath(s)
 
 
 def expand_range(s: str) -> list[str]:
@@ -284,6 +307,8 @@ if __name__ == "__main__":
     download_list_volumes = parse_download_limit(args.volumes)
     download_list_chapters = parse_download_limit(args.chapters)
 
-    manga = Manga(args.id, download_list_volumes, download_list_chapters)
+    manga = Manga(
+        args.id, download_list_volumes, download_list_chapters, args.output_dir
+    )
 
-    print(manga.chapters)
+    manga.download()
