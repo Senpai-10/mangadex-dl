@@ -257,6 +257,8 @@ class Manga:
 
             if not os.path.exists(chapter_dir):
                 os.makedirs(chapter_dir)
+            else:
+                continue
 
             url = f"https://api.mangadex.org/at-home/server/{chapter.id}?forcePort443=false"
 
@@ -288,9 +290,8 @@ class Manga:
 
                     page_path = os.path.join(chapter_dir, page_filename)
 
-                    if not os.path.exists(page_path):
-                        with open(page_path, "wb") as f:
-                            f.write(requests.get(page_url).content)
+                    with open(page_path, "wb") as f:
+                        f.write(requests.get(page_url).content)
 
 
 def dir_path(s):
