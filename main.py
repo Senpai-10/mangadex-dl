@@ -203,9 +203,11 @@ class Manga:
         download_list_volumes: list[str],
         download_list_chapters: list[str],
         output_dir: str,
+        organize_by_volumes: str,
     ):
         self.id = id
         self.output_dir = output_dir
+        self.organize_by_volumes = organize_by_volumes
         self.info: MangaInfo = MangaInfo(id).fetch()
         self.chapters: list[Chapter] = fetch_chapters(
             id, download_list_volumes, download_list_chapters
@@ -228,22 +230,28 @@ class Manga:
 
         self.info.dump_into_file(manga_dir)
 
-        volumes_dir = os.path.join(manga_dir, "volumes")
+        if self.organize_by_volumes:
+            chapter_download_dir = os.path.join(manga_dir, "volumes")
+        else:
+            chapter_download_dir = os.path.join(manga_dir, "chapters")
 
-        if not os.path.exists(volumes_dir):
-            os.makedirs(volumes_dir)
+        if not os.path.exists(chapter_download_dir):
+            os.makedirs(chapter_download_dir)
 
         # Download chapters
         for chapter in self.chapters:
-            volume_dir = os.path.join(volumes_dir, chapter.volume)
+            if self.organize_by_volumes:
+                chapter_download_dir = os.path.join(
+                    chapter_download_dir, chapter.volume
+                )
 
-            if not os.path.exists(volume_dir):
-                os.makedirs(volume_dir)
+                if not os.path.exists(chapter_download_dir):
+                    os.makedirs(chapter_download_dir)
 
             new_chapter_title = slugify(chapter.title).replace("-", " ")
 
             chapter_dir = os.path.join(
-                volume_dir,
+                chapter_download_dir,
                 f"{chapter.number} {new_chapter_title}",
             )
 
@@ -443,6 +451,12 @@ if __name__ == "__main__":
         help="Chapters to donwload, can be a range or a '*' to download all chapters (Default: '*') Example: \"--chapters '1,2,3,4,5-10'\" or \"--chapters '1-10'\" or \"--chapters '*'\"",
     )
 
+    parser.add_argument(
+        "--organize-by-volumes",
+        action="store_true",
+        help="Download chapters in <Manga_name>/volumes/<volume number>/<ch number> <ch title>/",
+    )
+
     args = parser.parse_args()
 
     download_list_volumes = parse_download_limit(args.volumes)
@@ -456,7 +470,11 @@ if __name__ == "__main__":
         args.id = manga_search(args.name)
 
     manga = Manga(
-        args.id, download_list_volumes, download_list_chapters, args.output_dir
+        args.id,
+        download_list_volumes,
+        download_list_chapters,
+        args.output_dir,
+        args.organize_by_volumes,
     )
 
     manga.download()
