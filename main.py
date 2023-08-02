@@ -217,10 +217,23 @@ class Manga:
     def download(self):
         console = Console()
 
+        console.print(f"Downloading manga: '[bold cyan]{self.info.title}[/bold cyan]'")
+        console.print(f"ID: [bold yellow]{self.info.id}[/bold yellow]")
         console.print(
-            f"Download chapters for '[bold cyan]{self.info.title}[/bold cyan]'"
+            f"Genres: [bold yellow]{' '.join(self.info.genres)}[/bold yellow]"
         )
-        console.print(f"\tID: {self.info.id}")
+        console.print(
+            f"Themes: [bold yellow]{' '.join(self.info.themes)}[/bold yellow]"
+        )
+        console.print(
+            f"Total volumes: [bold yellow]{self.info.lastVolume}[/bold yellow]"
+        )
+        console.print(
+            f"Total chapters: [bold yellow]{self.info.lastChapter}[/bold yellow]"
+        )
+        console.print(
+            f"Chapters select for download: [bold yellow]{len(self.chapters)}[/bold yellow]"
+        )
         manga_dir = os.path.join(self.output_dir, slugify(self.info.title))
 
         if not os.path.exists(manga_dir):
@@ -371,7 +384,7 @@ def parse_download_limit(s: str):
     return l
 
 
-def manga_search(n: str) -> str:
+def manga_search(n: str, is_search: bool) -> str:
     console = Console()
     encoded_title = quote(n)
     url = f"https://api.mangadex.org/manga?title={encoded_title}&limit=20&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&includes[]=cover_art&order[relevance]=desc"
@@ -405,6 +418,9 @@ def manga_search(n: str) -> str:
 
         ids.append(id)
         manga_list.append(manga_dict)
+
+    if not is_search:
+        return ids[0]
 
     table = Table(title=f"Search for '{encoded_title}'")
 
@@ -446,7 +462,14 @@ def main():
         "--name",
         type=str,
         required=False,
-        help="Name of manga you want to download.",
+        help="Name of manga you want to download. Without -s flag the first result is selected.",
+    )
+
+    parser.add_argument(
+        "-s",
+        "--search",
+        action="store_true",
+        help="Instead of select the first search result, this flag let you select the manga from search results.",
     )
 
     parser.add_argument(
@@ -489,7 +512,7 @@ def main():
         exit(1)
 
     if not args.id and args.name:
-        args.id = manga_search(args.name)
+        args.id = manga_search(args.name, args.search)
 
     manga = Manga(
         args.id,
