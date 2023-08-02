@@ -412,8 +412,8 @@ def manga_search(n: str) -> str:
             return ids[index]
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+def main():
+    parser = argparse.ArgumentParser(description=f"Download manga from mangadex.org.")
 
     parser.add_argument(
         "-i", "--id", type=str, required=False, help="ID of manga you want to download."
@@ -478,3 +478,7 @@ if __name__ == "__main__":
     )
 
     manga.download()
+
+
+if __name__ == "__main__":
+    main()
