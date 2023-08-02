@@ -215,6 +215,12 @@ class Manga:
         )
 
     def download(self):
+        console = Console()
+
+        console.print(
+            f"Download chapters for '[bold cyan]{self.info.title}[/bold cyan]'"
+        )
+        console.print(f"\tID: {self.info.id}")
         manga_dir = os.path.join(self.output_dir, slugify(self.info.title))
 
         if not os.path.exists(manga_dir):
