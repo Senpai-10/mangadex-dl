@@ -9,6 +9,7 @@ from rich.table import Table
 from dataclasses import dataclass, field
 from urllib.parse import quote
 from slugify import slugify
+import concurrent.futures
 from rich.progress import (
     BarColumn,
     MofNCompleteColumn,
@@ -281,17 +282,31 @@ class Manga:
             hash = ch["hash"]
             data = ch["data"]
 
-            with progress_bar as p:
-                for filename in p.track(
-                    data, description=f"Downloading chapter {chapter.number}"
-                ):
-                    page_url = f"https://uploads.mangadex.org/data/{hash}/{filename}"
-                    page_filename = parse_filename(filename)
+            ready_urls: list[tuple[str, str]] = []
 
-                    page_path = os.path.join(chapter_dir, page_filename)
+            for filename in data:
+                page_filename = parse_filename(filename)
+                page_path = os.path.join(chapter_dir, page_filename)
 
-                    with open(page_path, "wb") as f:
-                        f.write(requests.get(page_url).content)
+                ready_urls.append(
+                    (
+                        f"https://uploads.mangadex.org/data/{hash}/{filename}",
+                        page_path,
+                    )
+                )
+
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                executor.map(self.download_pages, ready_urls)
+
+    def download_pages(
+        self,
+        ready_url: tuple[str, str],
+    ):
+        console = Console()
+        console.print(f"[bold green]Downloading[/bold green] {ready_url[1]}")
+
+        with open(ready_url[1], "wb") as f:
+            f.write(requests.get(ready_url[0]).content)
 
 
 def dir_path(s):
@@ -351,6 +366,7 @@ def parse_download_limit(s: str):
 
 
 def manga_search(n: str) -> str:
+    console = Console()
     encoded_title = quote(n)
     url = f"https://api.mangadex.org/manga?title={encoded_title}&limit=20&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&includes[]=cover_art&order[relevance]=desc"
 
@@ -404,7 +420,6 @@ def manga_search(n: str) -> str:
         )
 
     while True:
-        console = Console()
         console.print(table)
 
         index: int = IntPrompt.ask("Select manga", show_default=True, default=0)
