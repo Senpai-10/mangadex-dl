@@ -1,0 +1,5 @@
+build
+dist
+mangadex_dl.egg-info
+.venv
+
